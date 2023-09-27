@@ -5,7 +5,7 @@
         inline: |
           #!/bin/bash
           
-          OUT=/etc/console-login-helper-messages/motd.d/22_geco.motd
+          OUT=/etc/motd.d/22_geco.motd
           
           echo -e "\nWelcome on a server powered by\n" > ${OUT}
           echo -e '\e[33m    ______                      _ ______' >> ${OUT}
@@ -25,8 +25,7 @@
                 i=$((i+1))
           done
           echo -e "\n\e[33mHostname:\e[0m "$(hostname -f) >> ${OUT}  
-          sleep 1; echo -e "\e[33mIPv4 Address:\e[0m $(ip route get 8.8.8.8 | awk 'NR==1 {print $7}')" >> ${OUT}
-          echo -e "\e[33mPublic IPv4 Address:\e[0m $(curl https://ipv4.icanhazip.com)\n" >> ${OUT}
+          sleep 1; echo -e "\e[33mIPv4 Address:\e[0m $(hostname -I)" >> ${OUT}
 
 # apply cloudinit script
     - path: /usr/local/bin/geco-cloudinit
@@ -323,8 +322,8 @@ systemd:
         [Install]
         WantedBy=multi-user.target
 
-# qemu-guest-agent
-    - name: setup-qemu-guest-agent.service
+# packages
+    - name: setup-packages.service
       enabled: true
       contents: |
         [Unit]
@@ -332,13 +331,13 @@ systemd:
         After=network-online.target
         Require=network-online.target
         ConditionKernelCommandLine=ignition.platform.id=qemu
-        ConditionPathExists=!/var/lib/qemu-guest-agent.stamp
+        ConditionPathExists=!/var/lib/extra-packages-installed.stamp
 
         [Service]
         Type=oneshot
         RemainAfterExit=yes
-        ExecStart=/bin/rpm-ostree install qemu-guest-agent
-        ExecStart=/bin/touch /var/lib/qemu-guest-agent.stamp
+        ExecStart=/bin/rpm-ostree install qemu-guest-agent python python3-cryptography
+        ExecStart=/bin/touch /var/lib/extra-packages-installed.stamp
         ExecStart=/bin/systemctl --no-block reboot
 
         [Install]
@@ -355,3 +354,4 @@ systemd:
             [Service]
             ExecStart=
             ExecStart=/sbin/fstrim -av
+
